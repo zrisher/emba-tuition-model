@@ -5,6 +5,7 @@ from .config import (
     AlumniConfig,
     EducationConfig,
     EnrollmentConfig,
+    MarketConfig,
     MarketingConfig,
     SimulationConfig,
 )
@@ -28,7 +29,7 @@ class AlumniEffectResult:
 
     awareness_boost: float
     donations: float
-    prestige_boost: float
+    preference_boost: float
 
 
 @dataclass
@@ -38,13 +39,13 @@ class MarketingResult:
     """
 
     awareness_boost: float
-    prestige_boost: float
+    preference_boost: float
 
 
 @dataclass
 class EnrollmentResult:
     """
-    The effects of awareness, prestige, and cost on a program's enrollment.
+    The effects of awareness, preference, and cost on a program's enrollment.
     """
 
     students_enrolled: float
@@ -58,7 +59,7 @@ class Reputation:
 
     alumni_count: float
     awareness: float  # percent of all applicants who are aware of the program
-    prestige: float  # percent of all applicants who would choose this program
+    preference: float  # percent of aware candidates who would choose this program
 
 
 @dataclass
@@ -149,80 +150,133 @@ def education_phase(
     )
 
 
-def alumni_phase(alumni_count: float, config: AlumniConfig):
-    # @TODO
-    awareness_boost = alumni_count * 0
-    prestige_boost = alumni_count * 0
+def alumni_phase(
+    alumni_count: float,
+    awareness: float,
+    preference: float,
+    alumni_config: AlumniConfig,
+    market_config: MarketConfig,
+):
+    """
+    Calculates the effects of alumni on awareness, preference, and donations.
 
-    donations = alumni_count * config.donation_per_year
+    Alumni contribute through word-of-mouth (awareness) and career success (preference).
+    Both effects have diminishing returns as awareness/preference approach 100%.
+    """
+    # Awareness: alumni reach unaware people
+    people_reached = alumni_count * alumni_config.candidates_reached_per_year
+    unaware_fraction = (100 - awareness) / 100
+    people_newly_aware = people_reached * unaware_fraction
+    awareness_boost = (people_newly_aware / market_config.size) * 100
+
+    # Preference: alumni influence aware people
+    aware_population = market_config.size * (awareness / 100)
+    if aware_population > 0:
+        people_influenced = alumni_count * alumni_config.candidates_influenced_per_year
+        unconvinced_fraction = (100 - preference) / 100
+        people_newly_convinced = people_influenced * unconvinced_fraction
+        preference_boost = (people_newly_convinced / aware_population) * 100
+    else:
+        preference_boost = 0
+
+    # Donations
+    donations = alumni_count * alumni_config.donation_per_year
 
     return AlumniEffectResult(
         awareness_boost=awareness_boost,
-        prestige_boost=prestige_boost,
+        preference_boost=preference_boost,
         donations=donations,
     )
 
 
 def marketing_phase(
-    marketing_spend_for_awareness: float,
-    reputation: Reputation,
-    total_tuition_cost: float,
-    config: MarketingConfig,
+    marketing_spend: float,
+    awareness: float,
+    preference: float,
+    marketing_config: MarketingConfig,
+    market_config: MarketConfig,
 ):
-    # @TODO
-    awareness_boost = 0
-    prestige_boost = 0
+    """
+    Calculates the effects of marketing spend on awareness and preference.
+
+    Marketing is more effective at building awareness than preference.
+    Both effects have diminishing returns as awareness/preference approach 100%.
+    """
+    # Awareness: dollars → people reached → awareness points
+    people_reached = marketing_spend / marketing_config.cost_to_reach_one_candidate
+    unaware_fraction = (100 - awareness) / 100  # headroom
+    people_newly_aware = people_reached * unaware_fraction
+    awareness_boost = (people_newly_aware / market_config.size) * 100
+
+    # Preference: dollars → people influenced → preference points
+    aware_population = market_config.size * (awareness / 100)
+    if aware_population > 0:
+        people_influenced = (
+            marketing_spend / marketing_config.cost_to_influence_one_candidate
+        )
+        unconvinced_fraction = (100 - preference) / 100  # headroom
+        people_newly_convinced = people_influenced * unconvinced_fraction
+        preference_boost = (people_newly_convinced / aware_population) * 100
+    else:
+        preference_boost = 0
 
     return MarketingResult(
         awareness_boost=awareness_boost,
-        prestige_boost=prestige_boost,
+        preference_boost=preference_boost,
     )
 
 
 def enrollment_phase(
     reputation: Reputation,
     total_tuition_cost: float,
-    config: EnrollmentConfig,
+    enrollment_config: EnrollmentConfig,
+    market_config: MarketConfig,
 ):
     """
-    Calculates enrollment demand using a non-linear (Logistic/Sigmoid) function
-    based on total tuition and reputation.
+    Calculates enrollment using a funnel model based on reputation and price.
+
+    Funnel:
+    1. Aware population = market size × awareness
+    2. Base preference = preference (would choose us ignoring price)
+    3. Price-adjusted preference = base × price_factor (high preference protects)
+    4. Would choose us = aware × price-adjusted preference
+    5. Applicants = would_choose × application_rate
+    6. Enrolled = min(applicants, max_students)
     """
+    # Step 1: Aware population
+    aware_population = market_config.size * (reputation.awareness / 100)
 
-    """ old logic
-    
-    min_price = config.enrollment.demand.price_min
-    max_price = config.enrollment.demand.price_max
+    # Step 2: Base preference (would choose us if price wasn't a factor)
+    base_choice_rate = reputation.preference / 100
 
-    # Config parameters for the curve
-    midpoint = (min_price + max_price) / 2  # Approx 52.5k
-    steepness = config.enrollment.demand.demand_steepness
+    # Step 3: Price adjustment (high preference reduces price sensitivity)
+    tuition_range = market_config.tuition_high - market_config.tuition_low
+    if tuition_range > 0:
+        price_position = (
+            total_tuition_cost - market_config.tuition_low
+        ) / tuition_range
+        price_position = max(0.0, min(1.0, price_position))  # clamp to 0-1
+    else:
+        price_position = 0.0
 
-    # Base demand potential based on awareness (Market Size)
-    base_market_size = config.enrollment.demand.enrollment_intercept + (
-        awareness * config.enrollment.demand.w_awareness
-    )
+    # High prestige protects against price sensitivity
+    effective_sensitivity = enrollment_config.price_sensitivity * (1 - base_choice_rate)
+    price_factor = max(0.0, 1 - effective_sensitivity * price_position)
 
-    # Logistic Function
-    try:
-        logit = steepness * (tuition_total - midpoint)
-        probability = 1.0 / (1.0 + math.exp(logit))
-    except OverflowError:
-        probability = 0.0
+    # Effective choice rate = base preference adjusted by price
+    effective_choice_rate = base_choice_rate * price_factor
 
-    estimated_demand = base_market_size * probability
-    return estimated_demand
-    """
+    # Step 4: Would choose us
+    would_choose = aware_population * effective_choice_rate
 
-    # @TODO
-    # Simple placeholder logic until a richer enrollment model is implemented
-    applications_submitted = max(
-        0.0, config.max_students * (config.base_awareness / 100)
-    )
-    applications_approved = min(applications_submitted, config.max_students)
+    # Step 5: Actually apply
+    applicants = would_choose * enrollment_config.application_rate
+
+    # Step 6: Enroll (capped by capacity)
+    enrolled = min(applicants, enrollment_config.max_students)
 
     return EnrollmentResult(
-        students_enrolled=applications_approved,
+        students_enrolled=enrolled,
     )
 
 
@@ -231,40 +285,53 @@ def run_year(
     cost_per_credit: float,
     total_tuition_cost: float,
     config: SimulationConfig,
+    skip_spring_summer: bool = False,
 ):
     # Initial state
     reputation = Reputation(
         alumni_count=prior_year_result.reputation.alumni_count,
         awareness=prior_year_result.reputation.awareness,
-        prestige=prior_year_result.reputation.prestige,
+        preference=prior_year_result.reputation.preference,
     )
     net_revenue = 0
 
-    # Spring/Summer Education
-    spring_summer_semesters = (
-        config.education.years[1] if len(config.education.years) > 1 else []
-    )
-    spring_summer_education = education_phase(
-        prior_year_result.fall_students_remaining,
-        spring_summer_semesters,
-        cost_per_credit,
-        config.education,
-    )
-    reputation.alumni_count += spring_summer_education.students_remaining
-    net_revenue += spring_summer_education.net_revenue
+    # Apply decay at start of year (reputation fades without maintenance)
+    reputation.awareness *= 1 - config.reputation.awareness_decay_rate
+    reputation.preference *= 1 - config.reputation.preference_decay_rate
 
-    spring_summer_marketing_spend = max(
-        0.0, spring_summer_education.net_revenue * config.marketing.spend_pct
-    )
-    net_revenue -= spring_summer_marketing_spend
+    # Spring/Summer Education (skip if flagged, e.g., first year covered by donations)
+    if skip_spring_summer:
+        # Students who completed fall still graduate, but no revenue/expense
+        reputation.alumni_count += prior_year_result.fall_students_remaining
+        spring_summer_marketing_spend = 0.0
+    else:
+        spring_summer_semesters = (
+            config.education.years[1] if len(config.education.years) > 1 else []
+        )
+        spring_summer_education = education_phase(
+            prior_year_result.fall_students_remaining,
+            spring_summer_semesters,
+            cost_per_credit,
+            config.education,
+        )
+        reputation.alumni_count += spring_summer_education.students_remaining
+        net_revenue += spring_summer_education.net_revenue
+
+        spring_summer_marketing_spend = max(
+            0.0, spring_summer_education.net_revenue * config.marketing.spend_pct
+        )
+        net_revenue -= spring_summer_marketing_spend
 
     # Alumni Effects
     alumni_result = alumni_phase(
         reputation.alumni_count,
+        reputation.awareness,
+        reputation.preference,
         config.alumni,
+        config.market,
     )
     reputation.awareness += alumni_result.awareness_boost
-    reputation.prestige += alumni_result.prestige_boost
+    reputation.preference += alumni_result.preference_boost
     net_revenue += alumni_result.donations
 
     # Marketing
@@ -273,18 +340,24 @@ def run_year(
     )
     marketing_result = marketing_phase(
         marketing_spend,
-        reputation,
-        total_tuition_cost,
+        reputation.awareness,
+        reputation.preference,
         config.marketing,
+        config.market,
     )
     reputation.awareness += marketing_result.awareness_boost
-    reputation.prestige += marketing_result.prestige_boost
+    reputation.preference += marketing_result.preference_boost
+
+    # Clamp awareness and preference to valid range (0-100%)
+    reputation.awareness = max(0.0, min(100.0, reputation.awareness))
+    reputation.preference = max(0.0, min(100.0, reputation.preference))
 
     # Enrollment
     enrollment = enrollment_phase(
         reputation,
         total_tuition_cost,
         config.enrollment,
+        config.market,
     )
 
     # Fall Education
@@ -326,7 +399,7 @@ def run_model(
         reputation=Reputation(
             alumni_count=initial_state.alumni_count,
             awareness=initial_state.awareness,
-            prestige=initial_state.prestige,
+            preference=initial_state.preference,
         ),
     )
 
@@ -340,11 +413,15 @@ def run_model(
     )
 
     for year in range(num_years):
+        # Skip spring/summer in first year if configured (e.g., covered by donations)
+        skip_spring_summer = (year == 0) and initial_state.skip_first_spring_summer
+
         prior_year_result = run_year(
             prior_year_result,
             cost_per_credit,
             total_tuition_cost,
             config,
+            skip_spring_summer=skip_spring_summer,
         )
 
         results.append(prior_year_result)

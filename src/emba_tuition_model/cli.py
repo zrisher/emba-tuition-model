@@ -1,9 +1,10 @@
 from .config import load_config
-from .simulation import run_model
+from .optimize import find_optimal_tuition
 
 
 def main():
     print("EMBA Tuition Model Simulation")
+    print("=" * 70)
 
     # Load configuration
     try:
@@ -12,41 +13,55 @@ def main():
         print(f"Configuration Error: {e}")
         return
 
+    print(f"Market size: {config.market.size:,.0f}")
+    print(
+        f"Initial state: awareness={config.initial_state.awareness}%, "
+        f"preference={config.initial_state.preference}%, "
+        f"skip_first_spring_summer={config.initial_state.skip_first_spring_summer}"
+    )
+
     final_year = 20
 
-    # --- Optimization Loop ---
-    print("\nStarting Optimization Loop...")
-    print(f"{'Tuition':<10} | {'Total Net Rev':<15}")
-    print("-" * 35)
+    # --- Optimization ---
+    print("\nFinding optimal tuition (annual range: $0 - $90,000)...")
 
-    best_tuition = 0.0
-    max_net_revenue = -float("inf")
+    opt = find_optimal_tuition(config, final_year)
 
-    # Test tuition from $0 to $2000 in $50 increments
-    for tuition in range(0, 2001, 50):
-        results = run_model(float(tuition), final_year, config)
-        total_net = sum(r.net_revenue for r in results)
+    print(f"Optimal tuition: ${opt.best_tuition_per_credit:.0f}/credit")
+    print(f"Maximum total net revenue: ${opt.max_total_net_revenue:,.2f}")
 
-        if total_net > max_net_revenue:
-            max_net_revenue = total_net
-            best_tuition = tuition
+    # --- Detailed Results ---
+    print(f"\nYear-by-year results at ${opt.best_tuition_per_credit:.0f}/credit:")
+    results = opt.results
 
-    print("-" * 35)
-    print(f"OPTIMAL TUITION FOUND: ${best_tuition}/credit")
-    print(f"Maximum Total Net Revenue: ${max_net_revenue:,.2f}")
+    print("-" * 70)
+    print(
+        f"{'Year':>4} | {'Awareness':>9} | {'Preference':>10} | "
+        f"{'Alumni':>6} | {'Students':>8} | {'Net Revenue':>12}"
+    )
+    print("-" * 70)
 
-    # --- Detailed Run for Optimal ---
-    print(f"\nDetailed results for optimal tuition (${best_tuition}/credit):")
-    results = run_model(float(best_tuition), final_year, config)
+    for year_index, r in enumerate(results, start=1):
+        # Estimate enrolled students (before dropout)
+        students = r.fall_students_remaining / 0.9025
+        print(
+            f"{year_index:>4} | {r.reputation.awareness:>8.2f}% | "
+            f"{r.reputation.preference:>9.2f}% | {r.reputation.alumni_count:>6.0f} | "
+            f"{students:>8.1f} | ${r.net_revenue:>11,.0f}"
+        )
 
-    print("-" * 45)
-    print(f"{'Year':<6} | {'Net Rev':<12}")
-    print("-" * 45)
+    print("-" * 70)
 
-    for year_index, state in enumerate(results, start=1):
-        print(f"{year_index:<6} | ${state.net_revenue:<11,.0f}")
+    total_revenue = sum(r.net_revenue for r in results)
+    final_awareness = results[-1].reputation.awareness
+    final_preference = results[-1].reputation.preference
+    final_alumni = results[-1].reputation.alumni_count
 
-    print("-" * 45)
+    print(f"\nSummary after {final_year} years:")
+    print(f"  Total net revenue: ${total_revenue:,.0f}")
+    print(f"  Final awareness: {final_awareness:.2f}%")
+    print(f"  Final preference: {final_preference:.2f}%")
+    print(f"  Total alumni: {final_alumni:.0f}")
 
 
 if __name__ == "__main__":

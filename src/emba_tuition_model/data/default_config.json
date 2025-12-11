@@ -1,13 +1,25 @@
 {
   "initial_state": {
-    "alumni_count": 0,
-    "awareness": 0,
-    "prestige": 0,
+    "alumni_count": 25,
+    "awareness": 1,
+    "preference": 20,
     "prior_fall_marketing_spend": 0,
-    "prior_fall_students_remaining": 0
+    "prior_fall_students_remaining": 0,
+    "skip_first_spring_summer": true
+  },
+  "market": {
+    "size": 100000,
+    "growth_rate": 0.03,
+    "tuition_low": 15000,
+    "tuition_high": 90000
+  },
+  "reputation": {
+    "awareness_decay_rate": 0.1,
+    "preference_decay_rate": 0.05
   },
   "alumni": {
-    "candidates_advertised_per_year": 2,
+    "candidates_reached_per_year": 2,
+    "candidates_influenced_per_year": 0.5,
     "donation_per_year": 200
   },
   "education": {
@@ -81,20 +93,13 @@
     ]
   },
   "enrollment": {
-    "max_students": 100,
-    "base_awareness": 100,
-    "marketing_efficiency": 0.0005,
-    "demand": {
-      "price_min": 15000,
-      "price_max": 90000,
-      "demand_steepness": 0.00015,
-      "enrollment_intercept": 80,
-      "w_awareness": 0.2
-    }
+    "max_students": 50,
+    "application_rate": 0.1,
+    "price_sensitivity": 2.0
   },
   "marketing": {
-    "base_awareness": 100,
     "spend_pct": 0.05,
-    "marketing_efficiency": 0.0005
+    "cost_to_reach_one_candidate": 50,
+    "cost_to_influence_one_candidate": 500
   }
 }
