@@ -41,13 +41,13 @@ uv run main.py
 
 ### Code Formatting
 
-This project uses **Ruff** for Python linting/formatting and **Prettier** for other files (JSON, Markdown, and JavaScript).
+This project uses **Ruff** for Python linting/formatting and **Prettier** for other files (JSON, Markdown, and JavaScript):
 
-Pre-commit hooks automatically format code on commit.
+- VSCode extensions [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) format on save.
 
-VSCode extensions [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) format on save.
+- Pre-commit hooks automatically format code on commit.
 
-You can run them manually to debug formatting issues:
+- You can run them manually to debug formatting issues:
 
 ```bash
 # Python
