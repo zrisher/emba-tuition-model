@@ -1,0 +1,100 @@
+{
+  "initial_state": {
+    "alumni_count": 0,
+    "awareness": 0,
+    "prestige": 0,
+    "prior_fall_marketing_spend": 0,
+    "prior_fall_students_remaining": 0
+  },
+  "alumni": {
+    "candidates_advertised_per_year": 2,
+    "donation_per_year": 200
+  },
+  "education": {
+    "credits_per_term": 6,
+    "dropout_rate_per_term": 0.05,
+    "semester_costs": {
+      "general_per_student": 175.0,
+      "technology_per_student": 150.0
+    },
+    "semester_fees": {
+      "general_per_student": 175.0,
+      "program_per_student": 667.0,
+      "technology_per_student": 150.0
+    },
+    "term_costs": {
+      "content_per_credit_hour": 50.0,
+      "instructor_per_student": 285.71,
+      "intensive_lecturer": 10000.0,
+      "intensive_experience": 10000.0
+    },
+    "years": [
+      [
+        {
+          "name": "Fall",
+          "terms": [
+            {
+              "name": "Fall A",
+              "has_intensive_lecturer": true,
+              "has_intensive_experience": true,
+              "has_licensed_content": false
+            },
+            {
+              "name": "Fall B",
+              "has_intensive_lecturer": true,
+              "has_intensive_experience": true,
+              "has_licensed_content": true
+            }
+          ]
+        }
+      ],
+      [
+        {
+          "name": "Spring",
+          "terms": [
+            {
+              "name": "Spring A",
+              "has_intensive_lecturer": true,
+              "has_intensive_experience": true,
+              "has_licensed_content": true
+            },
+            {
+              "name": "Spring B",
+              "has_intensive_lecturer": true,
+              "has_intensive_experience": true,
+              "has_licensed_content": false
+            }
+          ]
+        },
+        {
+          "name": "Summer",
+          "terms": [
+            {
+              "name": "Summer A",
+              "has_intensive_lecturer": true,
+              "has_intensive_experience": true,
+              "has_licensed_content": true
+            }
+          ]
+        }
+      ]
+    ]
+  },
+  "enrollment": {
+    "max_students": 100,
+    "base_awareness": 100,
+    "marketing_efficiency": 0.0005,
+    "demand": {
+      "price_min": 15000,
+      "price_max": 90000,
+      "demand_steepness": 0.00015,
+      "enrollment_intercept": 80,
+      "w_awareness": 0.2
+    }
+  },
+  "marketing": {
+    "base_awareness": 100,
+    "spend_pct": 0.05,
+    "marketing_efficiency": 0.0005
+  }
+}
