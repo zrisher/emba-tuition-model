@@ -17,10 +17,19 @@ A python model to determine the optimal tuition for a particular Executive MBA p
 
 2.  **Install dependencies**:
     We use `uv` for dependency management. Run the following command to sync the environment and install all required packages:
+
     ```bash
     uv sync
     ```
+
     This command will automatically create a virtual environment in `.venv` and install the locked dependencies.
+
+3.  **Install pre-commit hooks** (optional):
+    If you plan to contribute, install the pre-commit hooks:
+
+    ```bash
+    pre-commit install
+    ```
 
 ## Usage
 
@@ -32,69 +41,21 @@ uv run main.py
 
 ## Development
 
-### Formatting
+### Code Formatting
 
-This project uses automated formatting and linting tools to maintain code quality:
+This project uses **Ruff** for Python linting/formatting and **Prettier** for other files (JSON, Markdown, YAML, JavaScript).
 
-- **Ruff**: For Python linting and formatting
-- **Prettier**: For formatting JSON, Markdown, YAML, and JavaScript files
+Pre-commit hooks automatically format code on commit.
 
-### Pre-commit Hooks
+VSCode extensions [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff) and [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode) format on save.
 
-Pre-commit hooks are configured to automatically format and lint your code before each commit. The hooks will:
-
-- Run `ruff check --fix` on Python files to lint and auto-fix issues
-- Run `ruff format` on Python files to format code
-- Run `prettier` on JSON, Markdown, YAML, and JavaScript files
-
-**Installation**: The hooks are automatically installed when you run `pre-commit install`. If you need to reinstall them:
+You can run them manually to debug formatting issues:
 
 ```bash
-pre-commit install
-```
-
-**Testing**: You can manually run all hooks on all files:
-
-```bash
-pre-commit run --all-files
-```
-
-### VSCode Integration
-
-The project includes VSCode settings for automatic formatting:
-
-- **Python files**: Uses the Ruff extension (`charliermarsh.ruff`) with:
-
-  - Format on save enabled
-  - Auto-fix on save enabled
-  - Import organization on save enabled
-
-- **Other files** (JSON, Markdown, YAML, JavaScript): Uses Prettier with:
-  - Format on save enabled
-  - Requires a Prettier config file
-
-Make sure you have the following VSCode extensions installed:
-
-- [Ruff](https://marketplace.visualstudio.com/items?itemName=charliermarsh.ruff)
-- [Prettier](https://marketplace.visualstudio.com/items?itemName=esbenp.prettier-vscode)
-
-### Running Manually
-
-You can also run the formatting and linting tools manually:
-
-**Python (Ruff)**:
-
-```bash
-# Check for linting issues and auto-fix
+# Python
 uv run ruff check --fix
-
-# Format Python code
 uv run ruff format
-```
 
-**Other files (Prettier)**:
-
-```bash
-# Format all supported files
+# Other files
 npx prettier --write "**/*.{json,md,yaml,yml,js}"
 ```
