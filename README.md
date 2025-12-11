@@ -16,13 +16,11 @@ A python model to determine the optimal tuition for a particular Executive MBA p
     ```
 
 2.  **Install dependencies**:
-    We use `uv` for dependency management. Run the following command to sync the environment and install all required packages:
+    Use uv to create the environment and install required packages:
 
     ```bash
     uv sync
     ```
-
-    This command will automatically create a virtual environment in `.venv` and install the locked dependencies.
 
 3.  **Install pre-commit hooks** (optional):
     If you plan to contribute, install the pre-commit hooks:
@@ -43,7 +41,7 @@ uv run main.py
 
 ### Code Formatting
 
-This project uses **Ruff** for Python linting/formatting and **Prettier** for other files (JSON, Markdown, YAML, JavaScript).
+This project uses **Ruff** for Python linting/formatting and **Prettier** for other files (JSON, Markdown, and JavaScript).
 
 Pre-commit hooks automatically format code on commit.
 
