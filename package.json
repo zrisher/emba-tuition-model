@@ -1,0 +1,13 @@
+{
+  "name": "emba-tuition-model",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write .",
+    "check-format": "prettier --check ."
+  },
+  "devDependencies": {
+    "pre-commit": "^1.2.2",
+    "prettier": "^3.2.5"
+  }
+}
