@@ -49,8 +49,7 @@ uv run cli [years] [-c CONFIG]
 ```bash
 uv run cli              # Run 20-year simulation with default config
 uv run cli 10           # Run 10-year simulation
-uv run cli -c my.json   # Use custom config file
-uv run cli 15 -c my.json  # 15 years with custom config
+uv run cli 5 -c my.json  # 5 years with custom config
 ```
 
 ### Output
