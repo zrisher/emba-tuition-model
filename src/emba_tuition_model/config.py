@@ -4,92 +4,49 @@ from typing import List
 
 from pydantic import BaseModel
 
-# =============================================================================
-# Initial State
-# =============================================================================
-# Starting conditions for the simulation. Represents the program's state
-# before year 1 begins (e.g., after initial marketing and first cohort recruitment).
-
 
 class InitialState(BaseModel):
-    alumni_count: float  # Graduates from prior years
-    awareness: float  # % of market who know we exist (0-100)
-    preference: float  # % of aware candidates who would choose us (0-100)
-    prior_fall_marketing_spend: float  # Marketing budget carried into year 1
-    prior_fall_students_remaining: float  # Students entering spring/summer of year 1
-    # Skip spring/summer in year 1 (e.g., if covered by donations)
-    skip_first_spring_summer: bool = False
+    """Starting conditions before year 1 begins."""
 
-
-# =============================================================================
-# Market
-# =============================================================================
-# External market conditions. Defines the total addressable market and
-# competitive pricing landscape.
+    alumni_count: float
+    awareness: float  # fraction of market aware of program (0-1)
+    preference: float  # fraction of aware candidates who would choose us (0-1)
+    prior_fall_marketing_spend: float
+    prior_fall_students_remaining: float
+    skip_first_spring_summer: bool  # ignoring this launch year
 
 
 class MarketConfig(BaseModel):
-    size: float  # Total addressable candidates (professionals who could do EMBA)
-    growth_rate: float  # Annual market growth rate (e.g., 0.03 = 3%)
-    tuition_low: float  # Lowest competitive tuition in market
-    tuition_high: float  # Highest competitive tuition in market
-
-
-# =============================================================================
-# Reputation
-# =============================================================================
-# How reputation decays over time. Without active maintenance (alumni activity,
-# marketing), awareness and preference naturally fade.
+    size: float  # people who would consider enrolling in an EMBA program
+    growth_rate: float
+    tuition_low: float
+    tuition_high: float
 
 
 class ReputationConfig(BaseModel):
-    awareness_decay_rate: float  # Fraction lost per year (e.g., 0.1 = 10%)
-    preference_decay_rate: float  # Fraction lost per year (e.g., 0.05 = 5%)
-
-
-# =============================================================================
-# Alumni
-# =============================================================================
-# How alumni contribute to reputation building through word-of-mouth
-# and career success.
+    awareness_decay_rate: float  # fraction lost per year
+    preference_decay_rate: float
 
 
 class AlumniConfig(BaseModel):
-    candidates_reached_per_year: float  # People each alumnus makes aware per year
-    candidates_influenced_per_year: float  # Aware people each alumnus convinces
-    donation_per_year: float  # Average annual donation per alumnus ($)
-
-
-# =============================================================================
-# Marketing
-# =============================================================================
-# How marketing spend translates to reputation building.
+    candidates_reached_per_year: float  # people each alumnus makes aware
+    candidates_influenced_per_year: float  # aware people each alumnus makes prefer
+    donation_per_year: float
 
 
 class MarketingConfig(BaseModel):
-    spend_pct: float  # Fraction of revenue allocated to marketing (e.g., 0.05 = 5%)
-    cost_to_reach_one_candidate: float  # $ to make 1 person aware
-    cost_to_influence_one_candidate: float  # $ to convince 1 aware person
-
-
-# =============================================================================
-# Enrollment
-# =============================================================================
-# How reputation and price translate to enrolled students.
-# Funnel: aware → interested (preference) → price-adjusted → apply → enroll
+    spend_pct: float  # fraction of program revenue allocated to marketing
+    cost_to_reach_one_candidate: float
+    cost_to_influence_one_candidate: float
 
 
 class EnrollmentConfig(BaseModel):
-    max_students: float  # Program capacity per cohort
-    application_rate: float  # Fraction of interested candidates who apply
-    price_sensitivity: float  # At max price with 0% preference, lose this fraction
+    max_students: float
+    application_rate: float  # % of potentials that actually attend an emba
+    price_sensitivity: float  # higher = more enrollment loss at high prices
 
 
-# =============================================================================
-# Education
-# =============================================================================
-# Program structure, costs, and fees. Defines semesters, terms, and the
-# economics of delivering education.
+# --- Education ---
 
 
 class Term(BaseModel):
@@ -128,12 +85,10 @@ class EducationConfig(BaseModel):
     semester_costs: SemesterCosts
     semester_fees: SemesterFees
     term_costs: TermCosts
-    years: List[List[Semester]]  # years[0] = fall semesters, years[1] = spring/summer
+    years: List[List[Semester]]  # [0] = fall, [1] = spring/summer
 
 
-# =============================================================================
-# Root Configuration
-# =============================================================================
+# --- Full ---
 
 
 class SimulationConfig(BaseModel):
@@ -146,20 +101,12 @@ class SimulationConfig(BaseModel):
     education: EducationConfig
 
 
-# =============================================================================
-# Config Loading
-# =============================================================================
-
-
 def load_config(config_path: str = None) -> SimulationConfig:
-    """
-    Load configuration from a file path or default resources.
-    """
+    """Load configuration from file path or package defaults."""
     if config_path:
         with open(config_path, "r") as f:
             raw_config = json.load(f)
     else:
-        # Load from package resources
         try:
             config_file = importlib.resources.files("emba_tuition_model.data").joinpath(
                 "default_config.json"

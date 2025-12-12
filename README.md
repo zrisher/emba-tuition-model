@@ -31,11 +31,34 @@ A python model to determine the optimal tuition for a particular Executive MBA p
 
 ## Usage
 
-To run the main application:
+Run the simulation to find the optimal tuition price that maximizes final year net revenue:
 
 ```bash
-uv run main.py
+uv run cli [years] [-c CONFIG]
 ```
+
+### Arguments
+
+| Argument         | Description                                            |
+| ---------------- | ------------------------------------------------------ |
+| `years`          | Number of years to simulate (default: 20)              |
+| `-c`, `--config` | Path to a custom config file (uses default if omitted) |
+
+### Examples
+
+```bash
+uv run cli              # Run 20-year simulation with default config
+uv run cli 10           # Run 10-year simulation
+uv run cli -c my.json   # Use custom config file
+uv run cli 15 -c my.json  # 15 years with custom config
+```
+
+### Output
+
+The CLI outputs:
+
+- **Optimal tuition**: The per-credit tuition that maximizes final year revenue
+- **Year-by-year results**: Awareness, preference, alumni count, enrollment, and net revenue for each year
 
 ## Development
 
